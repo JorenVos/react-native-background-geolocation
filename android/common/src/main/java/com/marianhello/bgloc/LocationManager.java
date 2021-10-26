@@ -7,6 +7,7 @@ import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.Looper;
 
 import com.github.jparkie.promise.Promise;
@@ -22,16 +23,15 @@ public class LocationManager {
     private Context mContext;
     private static LocationManager mLocationManager;
 
-    public static final String[] PERMISSIONS = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-    };
+    public static final String[] PERMISSIONS = { Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION, };
 
     private LocationManager(Context context) {
         mContext = context;
     }
 
-    public class PermissionDeniedException extends Exception {}
+    public class PermissionDeniedException extends Exception {
+    }
 
     public static LocationManager getInstance(Context context) {
         if (mLocationManager == null) {
@@ -40,28 +40,31 @@ public class LocationManager {
         return mLocationManager;
     }
 
-    public Promise<Location> getCurrentLocation(final int timeout, final long maximumAge, final boolean enableHighAccuracy) {
+    public Promise<Location> getCurrentLocation(final int timeout, final long maximumAge,
+            final boolean enableHighAccuracy) {
         final Promise<Location> promise = Promises.promise();
 
         PermissionManager permissionManager = PermissionManager.getInstance(mContext);
-        permissionManager.checkPermissions(Arrays.asList(PERMISSIONS), new PermissionManager.PermissionRequestListener() {
-            @Override
-            public void onPermissionGranted() {
-                try {
-                    Location currentLocation = getCurrentLocationNoCheck(timeout, maximumAge, enableHighAccuracy);
-                    promise.set(currentLocation);
-                } catch (TimeoutException e) {
-                    promise.setError(e);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
+        permissionManager.checkPermissions(Arrays.asList(PERMISSIONS),
+                new PermissionManager.PermissionRequestListener() {
+                    @Override
+                    public void onPermissionGranted() {
+                        try {
+                            Location currentLocation = getCurrentLocationNoCheck(timeout, maximumAge,
+                                    enableHighAccuracy);
+                            promise.set(currentLocation);
+                        } catch (TimeoutException e) {
+                            promise.setError(e);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
 
-            @Override
-            public void onPermissionDenied() {
-                promise.setError(new PermissionDeniedException());
-            }
-        });
+                    @Override
+                    public void onPermissionDenied() {
+                        promise.setError(new PermissionDeniedException());
+                    }
+                });
 
         return promise;
     }
@@ -77,16 +80,20 @@ public class LocationManager {
      * @throws TimeoutException
      */
     @SuppressLint("MissingPermission")
-    public Location getCurrentLocationNoCheck(int timeout, long maximumAge, boolean enableHighAccuracy) throws InterruptedException, TimeoutException {
+    public Location getCurrentLocationNoCheck(int timeout, long maximumAge, boolean enableHighAccuracy)
+            throws InterruptedException, TimeoutException {
         final long minLocationTime = System.currentTimeMillis() - maximumAge;
-        final android.location.LocationManager locationManager = (android.location.LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
+        final android.location.LocationManager locationManager = (android.location.LocationManager) mContext
+                .getSystemService(Context.LOCATION_SERVICE);
 
-        Location lastKnownGPSLocation = locationManager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER);
+        Location lastKnownGPSLocation = locationManager
+                .getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER);
         if (lastKnownGPSLocation != null && lastKnownGPSLocation.getTime() >= minLocationTime) {
             return lastKnownGPSLocation;
         }
 
-        Location lastKnownNetworkLocation = locationManager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER);
+        Location lastKnownNetworkLocation = locationManager
+                .getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER);
         if (lastKnownNetworkLocation != null && lastKnownNetworkLocation.getTime() >= minLocationTime) {
             return lastKnownNetworkLocation;
         }

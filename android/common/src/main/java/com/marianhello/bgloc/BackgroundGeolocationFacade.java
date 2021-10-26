@@ -52,10 +52,8 @@ public class BackgroundGeolocationFacade {
     public static final int AUTHORIZATION_AUTHORIZED = 1;
     public static final int AUTHORIZATION_DENIED = 0;
 
-    public static final String[] PERMISSIONS = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-    };
+    public static final String[] PERMISSIONS = { Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION, };
 
     private boolean mServiceBroadcastReceiverRegistered = false;
     private boolean mLocationModeChangeReceiverRegistered = false;
@@ -177,14 +175,17 @@ public class BackgroundGeolocationFacade {
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private synchronized void registerLocationModeChangeReceiver() {
-        if (mLocationModeChangeReceiverRegistered) return;
+        if (mLocationModeChangeReceiverRegistered)
+            return;
 
-        getContext().registerReceiver(locationModeChangeReceiver, new IntentFilter(android.location.LocationManager.MODE_CHANGED_ACTION));
+        getContext().registerReceiver(locationModeChangeReceiver,
+                new IntentFilter(android.location.LocationManager.MODE_CHANGED_ACTION));
         mLocationModeChangeReceiverRegistered = true;
     }
 
     private synchronized void unregisterLocationModeChangeReceiver() {
-        if (!mLocationModeChangeReceiverRegistered) return;
+        if (!mLocationModeChangeReceiverRegistered)
+            return;
 
         Context context = getContext();
         if (context != null) {
@@ -194,14 +195,17 @@ public class BackgroundGeolocationFacade {
     }
 
     private synchronized void registerServiceBroadcast() {
-        if (mServiceBroadcastReceiverRegistered) return;
+        if (mServiceBroadcastReceiverRegistered)
+            return;
 
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(serviceBroadcastReceiver, new IntentFilter(LocationServiceImpl.ACTION_BROADCAST));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(serviceBroadcastReceiver,
+                new IntentFilter(LocationServiceImpl.ACTION_BROADCAST));
         mServiceBroadcastReceiverRegistered = true;
     }
 
     private synchronized void unregisterServiceBroadcast() {
-        if (!mServiceBroadcastReceiverRegistered) return;
+        if (!mServiceBroadcastReceiverRegistered)
+            return;
 
         Context context = getContext();
         if (context != null) {
@@ -215,24 +219,25 @@ public class BackgroundGeolocationFacade {
         logger.debug("Starting service");
 
         PermissionManager permissionManager = PermissionManager.getInstance(getContext());
-        permissionManager.checkPermissions(Arrays.asList(PERMISSIONS), new PermissionManager.PermissionRequestListener() {
-            @Override
-            public void onPermissionGranted() {
-                logger.info("User granted requested permissions");
-                // watch location mode changes
-                registerLocationModeChangeReceiver();
-                registerServiceBroadcast();
-                startBackgroundService();
-            }
+        permissionManager.checkPermissions(Arrays.asList(PERMISSIONS),
+                new PermissionManager.PermissionRequestListener() {
+                    @Override
+                    public void onPermissionGranted() {
+                        logger.info("User granted requested permissions");
+                        // watch location mode changes
+                        registerLocationModeChangeReceiver();
+                        registerServiceBroadcast();
+                        startBackgroundService();
+                    }
 
-            @Override
-            public void onPermissionDenied() {
-                logger.info("User denied requested permissions");
-                if (mDelegate != null) {
-                    mDelegate.onAuthorizationChanged(BackgroundGeolocationFacade.AUTHORIZATION_DENIED);
-                }
-            }
-        });
+                    @Override
+                    public void onPermissionDenied() {
+                        logger.info("User denied requested permissions");
+                        if (mDelegate != null) {
+                            mDelegate.onAuthorizationChanged(BackgroundGeolocationFacade.AUTHORIZATION_DENIED);
+                        }
+                    }
+                });
     }
 
     public void stop() {
@@ -297,8 +302,10 @@ public class BackgroundGeolocationFacade {
         dao.deleteAllLocations();
     }
 
-    public BackgroundLocation getCurrentLocation(int timeout, long maximumAge, boolean enableHighAccuracy) throws PluginException {
-        logger.info("Getting current location with timeout:{} maximumAge:{} enableHighAccuracy:{}", timeout, maximumAge, enableHighAccuracy);
+    public BackgroundLocation getCurrentLocation(int timeout, long maximumAge, boolean enableHighAccuracy)
+            throws PluginException {
+        logger.info("Getting current location with timeout:{} maximumAge:{} enableHighAccuracy:{}", timeout, maximumAge,
+                enableHighAccuracy);
 
         LocationManager locationManager = LocationManager.getInstance(getContext());
         Promise<Location> promise = locationManager.getCurrentLocation(timeout, maximumAge, enableHighAccuracy);
@@ -338,8 +345,7 @@ public class BackgroundGeolocationFacade {
     }
 
     public synchronized void configure(Config config) throws PluginException {
-        try
-        {
+        try {
             Config newConfig = Config.merge(getStoredConfig(), config);
             persistConfiguration(newConfig);
             logger.debug("Service configured with: {}", newConfig.toString());
@@ -393,8 +399,8 @@ public class BackgroundGeolocationFacade {
     /**
      * Force location sync
      *
-     * Method is ignoring syncThreshold and also user sync settings preference
-     * and sync locations to defined syncUrl
+     * Method is ignoring syncThreshold and also user sync settings preference and
+     * sync locations to defined syncUrl
      */
     public void forceSync() {
         logger.debug("Sync locations forced");
@@ -424,7 +430,8 @@ public class BackgroundGeolocationFacade {
                 throw new PluginException("Location services check failed", e, PluginException.SETTINGS_ERROR);
             }
         } else {
-            String locationProviders = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            String locationProviders = Settings.Secure.getString(context.getContentResolver(),
+                    Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
             return !TextUtils.isEmpty(locationProviders);
         }
     }
@@ -485,7 +492,7 @@ public class BackgroundGeolocationFacade {
     }
 
     public static boolean hasPermissions(Context context, String[] permissions) {
-        for (String perm: permissions) {
+        for (String perm : permissions) {
             if (ContextCompat.checkSelfPermission(context, perm) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
@@ -494,10 +501,12 @@ public class BackgroundGeolocationFacade {
     }
 
     /**
-     * Sets a transform for each coordinate about to be committed (sent or saved for later sync).
-     * You can use this for modifying the coordinates in any way.
+     * Sets a transform for each coordinate about to be committed (sent or saved for
+     * later sync). You can use this for modifying the coordinates in any way.
      *
-     * If the transform returns <code>null</code>, it will prevent the location from being committed.
+     * If the transform returns <code>null</code>, it will prevent the location from
+     * being committed.
+     * 
      * @param transform - the transform listener
      */
     public static void setLocationTransform(LocationTransform transform) {
